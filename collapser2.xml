@@ -1,0 +1,108 @@
+<project name="xpro collapser2" basedir="." default="copy-all-to-collapsed-dir">
+
+	<property file="build.properties" />
+
+	<property name="project.dir" value="${basedir}" />
+	<property name="war.dir" value="${project.dir}/${collapsed.dir}/${app.name}.war" />
+	<property name="web.bin.dir" value="${project.dir}/web/target/classes" />
+	<property name="web.test.bin.dir" value="${project.dir}/web/target/test-classes" />
+	<property name="business.bin.dir" value="${project.dir}/business/target/classes" />
+
+	<property name="web.main.java.dir" value="${project.dir}/${web.dir}/src/main/java" />
+	<property name="web.main.resources.dir" value="${project.dir}/${web.dir}/src/main/resources" />
+	<property name="web.main.webapp.dir" value="${project.dir}/${web.dir}/src/main/webapp" />
+	<property name="web.main.lib.compile.dir" value="${project.dir}/${web.dir}/src/main/lib-compile" />
+	<property name="web.main.lib.runtime.dir" value="${project.dir}/${web.dir}/src/main/lib-runtime" />
+	
+	<property name="tapestry.overrides.path" value="org/apache/tapestry5"/>
+
+	<property name="business.main.java.dir" value="${project.dir}/${business.dir}/src/main/java"/>
+	<property name="business.main.lib.compile.dir" value="${project.dir}/${business.dir}/src/main/lib-compile" />
+	<property name="business.main.lib.runtime.dir" value="${project.dir}/${business.dir}/src/main/lib-runtime" />
+	<property name="business.main.resources.dir" value="${project.dir}/${business.dir}/src/main/resources"/>
+	<property name="business.deployment.persistence.descriptor.file" value="${project.dir}/${business.dir}/src/main/resources/persistence-descriptor/${deployment.persistence.descriptor}" />
+
+	<!-- Make directory for collapsed WAR to sit in -->
+
+	<target name="mkdir">
+		<mkdir dir="${collapsed.dir}" />
+	</target>
+
+	<!-- Copy web elements to collapsed WAR -->
+
+	<target name="copy-web-to-collapsed-war" depends="mkdir">
+
+		<copy todir="${war.dir}">
+			<fileset dir="${web.main.webapp.dir}" />
+		</copy>
+
+		<copy todir="${war.dir}/WEB-INF/classes">
+			<!-- Exclude js because by convention it shouldn't be in here. See note below, where I get the js. -->
+			<fileset dir="${web.bin.dir}" includes="${web.package.path}/**,${tapestry.overrides.path}/**" excludes="**/*.js" />
+			<fileset dir="${web.test.bin.dir}" includes="${web.package.path}/**,${tapestry.overrides.path}/**" excludes="**/*.js" />
+			<fileset dir="${web.main.java.dir}" excludes="**/*.java,**/*.js" />
+			<fileset dir="${web.main.resources.dir}" />
+		</copy>
+
+		<!-- Pick up the js that I left out above. By convention js should be in main/resources/META-INF 
+			but I prefer to keep js that is specific to a page/component/mixin alongside its java. -->
+		<copy todir="${war.dir}/WEB-INF/classes/META-INF/modules">
+			<fileset dir="${web.bin.dir}/${web.package.path}" includes="**/*.js" />
+			<fileset dir="${web.test.bin.dir}/${web.package.path}" includes="**/*.js" />
+		</copy>
+
+		<copy todir="${war.dir}/WEB-INF/lib">
+			<fileset dir="${web.main.lib.compile.dir}" />
+			<fileset dir="${web.main.lib.runtime.dir}" />
+		</copy>
+
+	</target>
+
+	<!-- Copy business elements to collapsed WAR -->
+
+	<target name="copy-business-to-collapsed-war" depends="mkdir">
+
+		<copy todir="${war.dir}/WEB-INF/classes/${business.package.path}">
+			<fileset dir="${business.bin.dir}/${business.package.path}"/>
+		</copy>
+
+		<copy todir="${war.dir}/WEB-INF/classes/${client.package.path}">
+			<fileset dir="${business.bin.dir}/${client.package.path}"/>
+		</copy>
+
+		<copy todir="${war.dir}/WEB-INF/classes/${util.package.path}">
+			<fileset dir="${business.bin.dir}/${util.package.path}"/>
+		</copy>
+
+		<copy todir="${war.dir}/WEB-INF/classes/META-INF">
+			<fileset dir="${business.main.resources.dir}/META-INF" excludes="MANIFEST.MF,beans.xml"/>
+		</copy>
+
+		<copy tofile="${war.dir}/WEB-INF/classes/META-INF/persistence.xml">
+			<fileset dir="${business.main.resources.dir}/persistence-descriptor" includes="${collapsed.persistence.descriptor}" />
+		</copy>
+
+		<copy todir="${war.dir}/WEB-INF/lib">
+			<fileset dir="${business.main.lib.compile.dir}" includes="*.jar" />
+			<fileset dir="${business.main.lib.runtime.dir}" includes="*.jar" />
+		</copy>
+
+	</target>
+
+	<!-- Clean collapsed directory - delete everything in it -->
+
+	<target name="clean" depends="mkdir">
+		<delete includeemptydirs="true">
+			<fileset dir="${collapsed.dir}" />
+		</delete>
+		<antcall target="mkdir" />
+	</target>
+
+	<!-- Copy all elements of the collapsed directory -->
+
+	<target name="copy-all-to-collapsed-dir">
+		<antcall target="copy-web-to-collapsed-war" />
+		<antcall target="copy-business-to-collapsed-war" />
+	</target>
+
+</project>

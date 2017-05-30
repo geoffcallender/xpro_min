@@ -1,0 +1,11 @@
+Manifest-Version: 1.0
+Ant-Version: Apache Ant 1.6.5
+Created-By: 1.5.0_05-48 ("Apple Computer, Inc.")
+Package: com.goxpro.xpro.business
+Extension-Name: xpro
+Specification-Title: xpro
+Specification-Version: v1.0.0.0
+Specification-Vendor: Xpro
+Implementation-Title: com.goxpro.xpro.business com.goxpro.xpro.util
+Implementation-Version: v1.0.0.0
+Implementation-Vendor: Xpro

@@ -1,0 +1,310 @@
+<project name="web" default="get-dependent-files" basedir=".">
+
+	<property file="../build.properties" />
+
+	<property name="project.dir" value="${basedir}/.." />
+	<property name="context.path" value="com/goxpro/xpro/web" />
+
+	<property name="main.java.dir" value="src/main/java" />
+	<property name="main.webapp.dir" value="src/main/webapp" />
+	<property name="main.resources.dir" value="src/main/resources" />
+	<property name="main.tmp.dir" value="src/main/tmp" />
+	<property name="test.java.dir" value="src/test/java" />
+
+	<property name="lib.compile.dir" value="src/main/lib-compile" />
+	<property name="lib.provided.dir" value="src/main/lib-provided" />
+	<property name="lib.runtime.dir" value="src/main/lib-runtime" />
+	<property name="lib.test.dir" value="src/test/lib-test" />
+
+	<property name="target.dir" value="target" />
+	<property name="target.classes.dir" value="${target.dir}/classes" />
+	<property name="target.test-classes.dir" value="${target.dir}/test-classes" />
+	<property name="target.package.dir" value="${target.dir}/package" />
+
+	<property name="debug" value="on" />
+
+	<property name="war.file" value="${target.package.dir}/${app.name}.war" />
+
+	<!-- To compile, we need the business JAR in the classpath -->
+
+	<property name="business.jar.file" value="${project.dir}/${business.dir}/target/package/${app.name}.jar" />
+
+	<!-- If we're building for Tomcat then we'll produce the WAR in "collapsed EAR" format ie. all the business classes and libs will go in the WAR.-->
+
+	<property name="business.target.classes.dir" value="${project.dir}/${business.dir}/target/classes" />
+	<property name="business.lib.compile.dir" value="${project.dir}/${business.dir}/src/main/lib-compile" />
+	<property name="business.lib.runtime.dir" value="${project.dir}/${business.dir}/src/main/lib-runtime" />
+	<property name="business.main.resources.dir" value="${project.dir}/${business.dir}/src/main/resources" />
+	<property name="deployment.persistence.descriptor.file" value="${project.dir}/${business.dir}/src/main/resources/persistence-descriptor/${deployment.persistence.descriptor}" />
+
+	<path id="classpath.compile">
+		<fileset dir="${lib.compile.dir}">
+			<include name="**/*.jar" />
+		</fileset>
+		<fileset dir="${lib.provided.dir}">
+			<include name="**/*.jar" />
+		</fileset>
+		<pathelement location="${business.jar.file}" />
+	</path>
+
+	<path id="classpath.unit.test">
+		<pathelement location="${conf.test.dir}" />
+		<pathelement location="${target.test-classes.dir}" />
+		<pathelement location="${target.classes.dir}" />
+		<fileset dir="${lib.compile.dir}">
+			<include name="**/*.jar" />
+		</fileset>
+		<fileset dir="${lib.provided.dir}">
+			<include name="**/*.jar" />
+		</fileset>
+		<fileset dir="${lib.runtime.dir}">
+			<include name="**/*.jar" />
+		</fileset>
+		<fileset dir="${lib.test.dir}">
+			<include name="**/*.jar" />
+		</fileset>
+		<!-- Needed for its util classes. -->
+		<pathelement location="${business.jar.file}" />
+	</path>
+
+	<target name="clean" description="Deletes the target directory">
+		<delete dir="${target.dir}" />
+	</target>
+
+	<target name="init">
+		<mkdir dir="${target.classes.dir}" />
+		<mkdir dir="${target.test-classes.dir}" />
+		<mkdir dir="${target.package.dir}" />
+	</target>
+
+	<target name="compile" depends="init" description="Compiles main source, output goes to the target/classes dir.">
+		<available file="${business.jar.file}" property="business.jar.file.exists" />
+		<fail unless="business.jar.file.exists" message="Business client jar does not exist.  Run the business module's 'package' task before retrying." />
+
+		<javac source="${javac.source.version}" target="${javac.target.version}" srcdir="${main.java.dir}" destdir="${target.classes.dir}" classpathref="classpath.compile" includeantruntime="false" debug="${debug}" />
+	</target>
+
+	<target name="test-compile" depends="init" description="Compiles test source, output goes to the target/test-classes dir.">
+		<javac source="${javac.source.version}" target="${javac.target.version}" srcdir="${test.java.dir}" destdir="${target.test-classes.dir}" classpathref="classpath.unit.test" includeantruntime="false" debug="${debug}" />
+	</target>
+
+	<target name="test" description="">
+		<!--
+		<echo message="There are no unit tests in xpro web tier."/>
+		-->
+		<mkdir dir="test-results" />
+		<junit printsummary="yes" fork="off" timeout="10">
+			<test name="com.goxpro.xpro.web.WebUnitTestSuite" haltonfailure="yes">
+				<formatter type="plain" usefile="false" />
+			</test>
+			<classpath refid="classpath.unit.test" />
+		</junit>
+	</target>
+
+	<target name="package" depends="init" description="">
+		<delete file="${war.file}" />
+		<antcall target="package-basic-war" />
+		<antcall target="add-business-classes-if-for-tomcat" />
+	</target>
+
+	<target name="package-basic-war">
+		<war destfile="${war.file}">
+			<zipfileset prefix="" dir="${main.webapp.dir}" />
+
+			<zipfileset prefix="WEB-INF/classes" dir="${target.classes.dir}" />
+			<!-- Exclude js because by convention it shouldn't be in here. See note below, where I get the js. -->
+			<zipfileset prefix="WEB-INF/classes" dir="${main.java.dir}" excludes="**/*.java,**/*.js" />
+			<zipfileset prefix="WEB-INF/classes" dir="${main.resources.dir}" />
+
+			<!-- Pick up the js that I left out above. By convention js shouldn't be in main/resources/META-INF 
+				but I prefer to keep js that is specific to a page, component, or mixin in alongside its java. -->
+			<zipfileset prefix="WEB-INF/classes/META-INF/modules" dir="${main.java.dir}/${context.path}" includes="**/*.js" />
+
+			<zipfileset prefix="WEB-INF/lib" dir="${lib.compile.dir}" />
+			<zipfileset prefix="WEB-INF/lib" dir="${lib.runtime.dir}" />
+		</war>
+	</target>
+
+	<!-- Add business classes etc. to the WAR.  This is the "collapsed EAR" approach http://openejb.apache.org/collapsed-ear.html -->
+
+	<target name="add-business-classes-if-for-tomcat" if="deployment.server.type.is.tomcat7" depends="interpret-server-type">
+		<available type="file" file="${deployment.persistence.descriptor.file}" property="dep.pers.desc.exists" />
+		<fail unless="dep.pers.desc.exists" message="*** File specified by deployment.persistence.descriptor does not exist: ${deployment.persistence.descriptor.file}" />
+
+		<war destfile="${war.file}" update="true">
+			<zipfileset dir="${business.target.classes.dir}" prefix="WEB-INF/classes" />
+			<zipfileset dir="${business.main.resources.dir}" includes="META-INF/ejb-jar.xml" prefix="WEB-INF/classes" />
+			<zipfileset file="${deployment.persistence.descriptor.file}" fullpath="WEB-INF/classes/META-INF/persistence.xml" />
+			<zipfileset dir="${business.lib.compile.dir}" includes="*.jar" prefix="WEB-INF/lib" />
+			<zipfileset dir="${business.lib.runtime.dir}" includes="*.jar" prefix="WEB-INF/lib" />
+		</war>
+	</target>
+
+	<target name="deploy-war-to-server-tomcat7">
+		<available type="dir" file="${deployment.server.dir}/webapps" property="deployment.server.dir.exists" />
+		<fail unless="deployment.server.dir.exists" message="*** Deployment server directory does not exist. Tried ${deployment.server.dir}/webapps." />
+
+		<!-- The WAR is in "collapsed EAR" format. -->
+		<copy todir="${deployment.server.dir}/webapps" file="${war.file}" />
+		<!-- There is no datasource descriptor to copy to tomcat - datasource is set up in Tomcat's conf/openejb.xml.-->
+	</target>
+
+	<target name="integration-test" description="">
+		<echo message="There are no integration tests in xpro web tier." />
+	</target>
+
+	<target name="install" description="">
+		<echo message="There is no local repository to install the WAR in." />
+	</target>
+
+	<target name="delete-dependent-files" description="">
+		<delete dir="${lib.compile.dir}" includes="*" />
+		<delete dir="${lib.provided.dir}" includes="*" />
+		<delete dir="${lib.runtime.dir}" includes="*" />
+		<delete dir="${lib.test.dir}" includes="*" />
+	</target>
+
+	<!--
+	Get the files that our project depends on. They're all 3rd-party jars.
+	Each tier (business, web, enterprise) gets its own set.  Some files appear more than once, and that's OK.
+	It allows different tiers to use different versions, which is sometimes necessary.
+	-->
+	<target name="get-dependent-files">
+		<setproxy>
+		</setproxy>
+		<fail unless="maven.repo.root" message="*** Specify maven.repo.root in the project's build.properties." />
+
+		<property name="tapestry.staging" value="https://repository.apache.org/content/groups/staging"/>
+		<!--
+		<property name="tapestry.staging" value="${maven.repo.root}" />
+		-->
+
+		<!-- compile-time jars - needed for compiling and will be put in the package for runtime -->
+
+		<mkdir dir="${lib.compile.dir}" />
+		<get dest="${lib.compile.dir}/tapestry-core-5.4.1.jar" usetimestamp="true" src="${maven.repo.root}/org/apache/tapestry/tapestry-core/5.4.1/tapestry-core-5.4.1.jar" />
+		<get dest="${lib.compile.dir}/tapestry-json-5.4.1.jar" usetimestamp="true" src="${maven.repo.root}/org/apache/tapestry/tapestry-json/5.4.1/tapestry-json-5.4.1.jar" />
+		<get dest="${lib.compile.dir}/beanmodel-5.4.1.jar" usetimestamp="true" src="${maven.repo.root}/org/apache/tapestry/beanmodel/5.4.1/beanmodel-5.4.1.jar" />				
+		<get dest="${lib.compile.dir}/commons-5.4.1.jar" usetimestamp="true" src="${maven.repo.root}/org/apache/tapestry/commons/5.4.1/commons-5.4.1.jar" />				
+		<get dest="${lib.compile.dir}/tapestry-func-5.4.1.jar" usetimestamp="true" src="${maven.repo.root}/org/apache/tapestry/tapestry-func/5.4.1/tapestry-func-5.4.1.jar" />
+		<get dest="${lib.compile.dir}/plastic-5.4.1.jar" usetimestamp="true" src="${maven.repo.root}/org/apache/tapestry/plastic/5.4.1/plastic-5.4.1.jar" />
+		<get dest="${lib.compile.dir}/tapestry5-annotations-5.4.1.jar" usetimestamp="true" src="${maven.repo.root}/org/apache/tapestry/tapestry5-annotations/5.4.1/tapestry5-annotations-5.4.1.jar" />
+		<get dest="${lib.compile.dir}/tapestry-ioc-5.4.1.jar" usetimestamp="true" src="${maven.repo.root}/org/apache/tapestry/tapestry-ioc/5.4.1/tapestry-ioc-5.4.1.jar" />
+		<get dest="${lib.compile.dir}/javax.inject-1.jar" usetimestamp="true" src="${maven.repo.root}/javax/inject/javax.inject/1/javax.inject-1.jar" />
+		<!-- For JSR-303 Bean Validation 1.0 -->
+		<get dest="${lib.compile.dir}/tapestry-beanvalidator-5.4.1.jar" usetimestamp="true" src="${maven.repo.root}/org/apache/tapestry/tapestry-beanvalidator/5.4.1/tapestry-beanvalidator-5.4.1.jar" />
+		<!-- For less4j -->
+		<get dest="${lib.compile.dir}/commons-beanutils-1.8.3.jar" usetimestamp="true" src="${maven.repo.root}/commons-beanutils/commons-beanutils/1.8.3/commons-beanutils-1.8.3.jar" />
+		<!-- For tapestry-resteasy -->
+		<get dest="${lib.compile.dir}/tapestry-resteasy-0.4.0.jar" usetimestamp="true" src="${maven.repo.root}/org/tynamo/tapestry-resteasy/0.4.0/tapestry-resteasy-0.4.0.jar" />
+		<get dest="${lib.compile.dir}/resteasy-jaxrs-3.0.11.Final.jar" usetimestamp="true" src="${maven.repo.root}/org/jboss/resteasy/resteasy-jaxrs/3.0.11.Final/resteasy-jaxrs-3.0.11.Final.jar" />
+		<get dest="${lib.compile.dir}/resteasy-jsapi-3.0.11.Final.jar" usetimestamp="true" src="${maven.repo.root}/org/jboss/resteasy/resteasy-jsapi/3.0.11.Final/resteasy-jsapi-3.0.11.Final.jar" />
+		<get dest="${lib.compile.dir}/resteasy-jaxb-provider-3.0.11.Final.jar" usetimestamp="true" src="${maven.repo.root}/org/jboss/resteasy/resteasy-jaxb-provider/3.0.11.Final/resteasy-jaxb-provider-3.0.11.Final.jar" />
+		<!-- For ourselves -->
+		<get dest="${lib.compile.dir}/commons-net-3.3.jar" usetimestamp="true" src="${maven.repo.root}/commons-net/commons-net/3.3/commons-net-3.3.jar" />
+
+		<!-- provided jars - needed for compiling only - at runtime these are provided by the container (eg. JBoss) or the EAR (shared with the business tier) -->
+
+		<mkdir dir="${lib.provided.dir}" />
+		<get dest="${lib.provided.dir}/commons-lang-2.6.jar" usetimestamp="true" src="${maven.repo.root}/commons-lang/commons-lang/2.6/commons-lang-2.6.jar" />
+		<get dest="${lib.provided.dir}/javaee-api-7.0-1.jar" usetimestamp="true" src="${maven.repo.root}/org/apache/tomee/javaee-api/7.0-1/javaee-api-7.0-1.jar" />
+		<get dest="${lib.provided.dir}/slf4j-api-1.7.21.jar" usetimestamp="true" src="${maven.repo.root}/org/slf4j/slf4j-api/1.7.21/slf4j-api-1.7.21.jar" />
+		<!-- For JSR-303 bean validation - we're using Hibernate's implementation. -->
+		<!-- Hibernate 5* is not compatible with validation-api-1.0.x. See http://stackoverflow.com/questions/14730329/jpa-2-0-exception-to-use-javax-validation-package-in-jpa-2-0 .
+		<get dest="${lib.provided.dir}/hibernate-validator-5.1.2.Final.jar" usetimestamp="true" src="${maven.repo.root}/org/hibernate/hibernate-validator/5.1.2.Final/hibernate-validator-5.1.2.Final.jar" />
+		-->
+		<get dest="${lib.provided.dir}/hibernate-validator-4.3.2.Final.jar" usetimestamp="true" src="${maven.repo.root}/org/hibernate/hibernate-validator/4.3.2.Final/hibernate-validator-4.3.2.Final.jar" />
+		<!-- For OpenEJBSecurityService. -->
+		<get dest="${lib.provided.dir}/openejb-core-7.0.3.jar" usetimestamp="true" src="${maven.repo.root}/org/apache/tomee/openejb-core/7.0.3/openejb-core-7.0.3.jar" />
+		<get dest="${lib.provided.dir}/openejb-loader-7.0.3.jar" usetimestamp="true" src="${maven.repo.root}/org/apache/tomee/openejb-loader/7.0.3/openejb-loader-7.0.3.jar"/>
+		<get dest="${lib.provided.dir}/openejb-api-7.0.3.jar" usetimestamp="true" src="${maven.repo.root}/org/apache/tomee/openejb-api/7.0.3/openejb-api-7.0.3.jar" />
+
+		<!-- runtime jars - not needed for compiling but will be put in the package for runtime. -->
+
+		<mkdir dir="${lib.runtime.dir}" />
+		<get dest="${lib.runtime.dir}/antlr-runtime-3.5.2.jar" usetimestamp="true" src="${maven.repo.root}/org/antlr/antlr-runtime/3.5.2/antlr-runtime-3.5.2.jar" />
+		<get dest="${lib.runtime.dir}/bsf-2.4.0.jar" usetimestamp="true" src="${maven.repo.root}/bsf/bsf/2.4.0/bsf-2.4.0.jar" />
+		<get dest="${lib.runtime.dir}/commons-codec-1.10.jar" usetimestamp="true" src="${maven.repo.root}/commons-codec/commons-codec/1.10/commons-codec-1.10.jar" />
+		<get dest="${lib.runtime.dir}/commons-configuration-1.6.jar" usetimestamp="true" src="${maven.repo.root}/commons-configuration/commons-configuration/1.6/commons-configuration-1.6.jar" />
+		<get dest="${lib.runtime.dir}/commons-lang-2.6.jar" usetimestamp="true" src="${maven.repo.root}/commons-lang/commons-lang/2.6/commons-lang-2.6.jar" />
+		<!-- For tapestry-webresources -->
+		<get dest="${lib.runtime.dir}/tapestry-webresources-5.4.1.jar" usetimestamp="true" src="${maven.repo.root}/org/apache/tapestry/tapestry-webresources/5.4.1/tapestry-webresources-5.4.1.jar" />
+		<get dest="${lib.runtime.dir}/less4j-1.12.0.jar" usetimestamp="true" src="${maven.repo.root}/com/github/sommeri/less4j/1.12.0/less4j-1.12.0.jar" />
+		<get dest="${lib.runtime.dir}/closure-compiler-v20131014.jar" usetimestamp="true" src="${maven.repo.root}/com/google/javascript/closure-compiler/v20131014/closure-compiler-v20131014.jar" />
+		<get dest="${lib.runtime.dir}/rhino-1.7.7.jar" usetimestamp="true" src="${maven.repo.root}/org/mozilla/rhino/1.7.7/rhino-1.7.7.jar" />
+		<!-- For closure-compiler, and guava for recurly-java-library -->
+		<!-- Missing anything? See http://central.maven.org/maven2/com/google/javascript/closure-compiler/v20131014/closure-compiler-v20131014.pom -->
+		<get dest="${lib.runtime.dir}/args4j-2.0.16.jar" usetimestamp="true" src="${maven.repo.root}/args4j/args4j/2.0.16/args4j-2.0.16.jar" />
+		<!-- 15.0 had a problem with Java EE 7. See https://code.google.com/p/guava-libraries/issues/detail?id=1527 .
+			<get dest="${lib.runtime.dir}/guava-15.0.jar" usetimestamp="true" src="${maven.repo.root}/com/google/guava/guava/15.0/guava-15.0.jar" />
+		-->
+		<get dest="${lib.runtime.dir}/guava-18.0.jar" usetimestamp="true" src="${maven.repo.root}/com/google/guava/guava/18.0/guava-18.0.jar" />
+		<get dest="${lib.runtime.dir}/json-20090211.jar" usetimestamp="true" src="${maven.repo.root}/org/json/json/20090211/json-20090211.jar" />
+		<!-- For closure-compiler and less4j -->
+		<get dest="${lib.runtime.dir}/protobuf-java-2.5.0.jar" usetimestamp="true" src="${maven.repo.root}/com/google/protobuf/protobuf-java/2.5.0/protobuf-java-2.5.0.jar" />
+		<!-- For tapestry-upload and less4j and modifying JRXML on the fly. -->
+		<!-- We already have this in lib.compile.dir.
+		<get dest="${lib.runtime.dir}/commons-io-2.4.jar" usetimestamp="true" src="${maven.repo.root}/commons-io/commons-io/2.4/commons-io-2.4.jar" />
+		-->
+		<!-- For tapestry-resteasy. -->
+		<!--
+		<get dest="${lib.runtime.dir}/FastInfoset-1.2.12.jar" usetimestamp="true" src="${maven.repo.root}/com/sun/xml/fastinfoset/FastInfoset/1.2.12/FastInfoset-1.2.12.jar" />
+		-->
+		<!--
+		<get dest="${lib.runtime.dir}/httpclient-4.2.1.jar" usetimestamp="true" src="${maven.repo.root}/org/apache/httpcomponents/httpclient/4.2.1/httpclient-4.2.1.jar" />
+		<get dest="${lib.runtime.dir}/httpcore-4.2.1.jar" usetimestamp="true" src="${maven.repo.root}/org/apache/httpcomponents/httpcore/4.2.1/httpcore-4.2.1.jar" />
+		-->
+		<get dest="${lib.runtime.dir}/istack-commons-runtime-2.16.jar" usetimestamp="true" src="${maven.repo.root}/com/sun/istack/istack-commons-runtime/2.16/istack-commons-runtime-2.16.jar" />
+		<get dest="${lib.runtime.dir}/jaxrs-api-3.0.11.Final.jar" usetimestamp="true" src="${maven.repo.root}/org/jboss/resteasy/jaxrs-api/3.0.11.Final/jaxrs-api-3.0.11.Final.jar" />
+		<get dest="${lib.runtime.dir}/jcip-annotations-1.0.jar" usetimestamp="true" src="${maven.repo.root}/net/jcip/jcip-annotations/1.0/jcip-annotations-1.0.jar" />
+		<get dest="${lib.runtime.dir}/jsr173_api-1.0.jar" usetimestamp="true" src="${maven.repo.root}/javax/xml/bind/jsr173_api/1.0/jsr173_api-1.0.jar" />
+		<!-- Also for tapestry-resteasy. Other implementations can be used. -->
+		<get dest="${lib.runtime.dir}/jaxb-core-2.2.7.jar" usetimestamp="true" src="${maven.repo.root}/com/sun/xml/bind/jaxb-core/2.2.7/jaxb-core-2.2.7.jar" />
+		<get dest="${lib.runtime.dir}/jaxb-impl-2.2.7.jar" usetimestamp="true" src="${maven.repo.root}/com/sun/xml/bind/jaxb-impl/2.2.7/jaxb-impl-2.2.7.jar" />
+
+		<!-- testing jars - needed for compiling and running tests (but this release has no web tier tests) -->
+
+		<mkdir dir="${lib.test.dir}" />
+		<get dest="${lib.test.dir}/junit-4.11.jar" usetimestamp="true" src="${maven.repo.root}/junit/junit/4.11/junit-4.11.jar" />
+		<get dest="${lib.test.dir}/hamcrest-core-1.3.jar" usetimestamp="true" src="${maven.repo.root}/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar" />
+		<get dest="${lib.test.dir}/log4j-1.2.17.jar" usetimestamp="true" src="${maven.repo.root}/log4j/log4j/1.2.17/log4j-1.2.17.jar" />
+		<get dest="${lib.test.dir}/slf4j-api-1.7.21.jar" usetimestamp="true" src="${maven.repo.root}/org/slf4j/slf4j-api/1.7.21/slf4j-api-1.7.21.jar" />
+		<get dest="${lib.test.dir}/slf4j-log4j12-1.7.21.jar" usetimestamp="true" src="${maven.repo.root}/org/slf4j/slf4j-log4j12/1.7.21/slf4j-log4j12-1.7.21.jar" />
+		<!-- For JNDI lookup -->
+		<get dest="${lib.test.dir}/dom4j-1.6.1.jar" usetimestamp="true" src="${maven.repo.root}/dom4j/dom4j/1.6.1/dom4j-1.6.1.jar" />
+		<!-- For Jetty (downgraded from 6.1.26 to 6.1.24 due to AJP errors. -->
+		<get dest="${lib.test.dir}/jetty-6.1.24.jar" usetimestamp="true" src="${maven.repo.root}/org/mortbay/jetty/jetty/6.1.24/jetty-6.1.24.jar" />
+		<get dest="${lib.test.dir}/jetty-util-6.1.24.jar" usetimestamp="true" src="${maven.repo.root}/org/mortbay/jetty/jetty-util/6.1.24/jetty-util-6.1.24.jar" />
+		<!-- For Jetty to provide an AJP Connector and JAAS --> 
+		<get dest="${lib.test.dir}/jetty-ajp-6.1.24.jar" usetimestamp="true" src="${maven.repo.root}/org/mortbay/jetty/jetty-ajp/6.1.24/jetty-ajp-6.1.24.jar" />
+		<get dest="${lib.test.dir}/jetty-plus-6.1.24.jar" usetimestamp="true" src="${maven.repo.root}/org/mortbay/jetty/jetty-plus/6.1.24/jetty-plus-6.1.24.jar" />
+
+	</target>
+
+	<target name="interpret-server-type">
+
+		<!-- Validate the deployment.server.type -->
+
+		<condition property="deployment.server.type.valid">
+			<or>
+				<equals arg1="${deployment.server.type}" arg2="wildfly9" />
+				<equals arg1="${deployment.server.type}" arg2="tomcat7" />
+				<equals arg1="${deployment.server.type}" arg2="glassfish3" />
+			</or>
+		</condition>
+		<fail unless="deployment.server.type.valid" message="*** Please specify a valid deployment.server.type. Expected wildfly9, tomcat7, or glassfish3.  Found ${deployment.server.type}." />
+
+		<!-- Set some boolean properties based on the deployment.server.type -->
+
+		<condition property="deployment.server.type.is.wildfly9">
+			<equals arg1="${deployment.server.type}" arg2="wildfly9" />
+		</condition>
+		<condition property="deployment.server.type.is.tomcat7">
+			<equals arg1="${deployment.server.type}" arg2="tomcat7" />
+		</condition>
+		<condition property="deployment.server.type.is.glassfish3">
+			<equals arg1="${deployment.server.type}" arg2="glassfish3" />
+		</condition>
+	</target>
+
+</project>

@@ -1,0 +1,43 @@
+<!-- 
+	The target names used in this build file are based on the conventions found in Maven's build lifecycle.  
+	See http://books.sonatype.com/maven-book/reference/lifecycle.html .
+ -->
+
+<project name="xpro build2" basedir=".">
+
+	<property file="build.properties" />
+
+	<property name="project.dir" value="${basedir}"/>
+
+	<target name="clean" description="Delete the output of previous builds">
+		<echo message="**************************" />
+		<echo message="Cleaning all..." />
+		<echo message="**************************" />
+		<ant dir="${business.dir}" target="clean" />
+		<ant dir="${web.dir}" target="clean" />
+		<ant dir="${enterprise.dir}" target="clean" />
+
+		<ant antfile="collapser2.xml" target="clean" />
+	</target>
+
+	<target name="compile" description="Compile the source code of the project">
+		<echo message="**************************" />
+		<echo message="Compiling Business module..." />
+		<echo message="**************************" />
+		<ant dir="${business.dir}" target="compile" />
+
+		<echo message="**************************" />
+		<echo message="Packaging Business module to satisfy Web dependency..." />
+		<echo message="**************************" />
+		<ant dir="${business.dir}" target="package" />
+
+		<echo message="**************************" />
+		<echo message="Compiling Web module..." />
+		<echo message="**************************" />
+		<ant dir="${web.dir}" target="compile" />
+		<ant dir="${web.dir}" target="test-compile" />
+		
+		<ant antfile="collapser2.xml" target="copy-all-to-collapsed-dir"/>
+	</target>
+
+</project>

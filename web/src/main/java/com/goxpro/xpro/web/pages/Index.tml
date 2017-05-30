@@ -1,0 +1,10 @@
+<!DOCTYPE html>
+<html xmlns:t="http://tapestry.apache.org/schema/tapestry_5_4.xsd">
+
+<body>
+	<t:eventlink event="invokeAFinderService">Invoke IPretendFinderServiceLocal</t:eventlink> (which doesn't use an interceptor)
+	<p/>
+	<t:eventlink event="invokeAManagerService">Invoke IPretendManagerServiceLocal</t:eventlink> (which DOES use an interceptor)
+</body>
+
+</html>

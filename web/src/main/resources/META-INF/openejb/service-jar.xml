@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Used by openejb -->
+
+<ServiceJar>
+
+  <!--
+  # ================================================
+  # Jetty Security Service implementation
+  # ================================================
+  -->
+  <ServiceProvider
+          id="OpenEJBSecurityService"
+          service="SecurityService"
+          types="SecurityService"
+          class-name="com.goxpro.xpro.web.services.security.OpenEJBSecurityService"/>
+
+</ServiceJar>

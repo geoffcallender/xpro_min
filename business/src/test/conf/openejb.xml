@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<openejb>
+
+	<!-- 
+		Whatever is specified in here overrides OpenEJB's corresponding defaults.  
+		See OpenEJB's conf/openejb.xml and conf/README.txt.
+
+		This config is for tests - we use an in-memory database (jdbc:hsqldb:mem:tempdb) 
+		but we could instead use files (say, jdbc:hsqldb:file:/devel/hsqldb/hsqldb).
+		To make openejb use this config, run tests with system property openejb.configuration set to the path of this file.
+		The resource ids correspond to the data sources specified in the persistence.xml.
+		For more options see http://openejb.apache.org/3.0/configuring-datasources.html .
+	 -->
+
+	<!-- For HSQLDB -->
+<!-- 
+	<Resource id="XproDS" type="DataSource">
+		JdbcDriver org.hsqldb.jdbcDriver 
+		JdbcUrl jdbc:hsqldb:mem:tempdb
+		UserName sa
+		Password
+		JtaManaged true
+	</Resource>
+
+	<Resource id="XproDSUnmanaged" type="DataSource">
+		JdbcDriver org.hsqldb.jdbcDriver 
+		JdbcUrl jdbc:hsqldb:mem:tempdb
+		UserName sa
+		Password
+		JtaManaged false
+	</Resource>
+ -->
+
+ 	<!-- For MySQL -->
+ 	<!-- For more settings see http://dev.mysql.com/doc/refman/5.5/en/connector-j-reference-configuration-properties.html -->
+	<!-- The reason for "tinyInt1isBit=false" is here: http://stackoverflow.com/questions/14381749/spring-hibernate-found-bit-expected-tinyint1-default-0
+	 -->
+	<Resource id="XproDS" type="DataSource">
+		JdbcDriver com.mysql.jdbc.Driver 
+		JdbcUrl jdbc:mysql://localhost:3306/xpro_dev?tinyInt1isBit=false
+		UserName dev
+		Password dev
+		JtaManaged true
+	</Resource>
+
+	<Resource id="XproDSUnmanaged" type="DataSource">
+		JdbcDriver com.mysql.jdbc.Driver 
+		JdbcUrl jdbc:mysql://localhost:3306/xpro_dev?tinyInt1isBit=false
+		UserName dev
+		Password dev
+		JtaManaged false
+	</Resource>
+	
+	<!-- The security service provider is declared in service-jar.xml. -->
+	
+	<SecurityService id="OpenEJBSecurityService" provider="openejb#OpenEJBSecurityService"/>
+	
+	<Deployments dir="/git/xpro_min/collapsed"/>
+	
+</openejb>
