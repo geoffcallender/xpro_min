@@ -4,12 +4,12 @@ import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.mortbay.jetty.Connector;
-import org.mortbay.jetty.Server;
-import org.mortbay.jetty.ajp.Ajp13SocketConnector;
-import org.mortbay.jetty.nio.SelectChannelConnector;
-import org.mortbay.jetty.webapp.WebAppContext;
-import org.mortbay.xml.XmlConfiguration;
+import org.eclipse.jetty.ajp.Ajp13SocketConnector;
+import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.nio.SelectChannelConnector;
+import org.eclipse.jetty.webapp.WebAppContext;
+import org.eclipse.jetty.xml.XmlConfiguration;
 
 public class RunJetty {
 
@@ -48,21 +48,25 @@ public class RunJetty {
 		}
 		else {
 			Connector httpConnector = new SelectChannelConnector();
-			httpConnector.setPort(Integer.getInteger("jetty.port", 8080));
+			// ServerConnector httpConnector = new ServerConnector(server);
+			httpConnector.setPort(Integer.getInteger("jetty.port", 28080));
 			connectors.add(httpConnector);
 
-			Connector httpsConnector = new SelectChannelConnector();
-			httpsConnector.setPort(Integer.getInteger("jetty.port", 8443));
-			connectors.add(httpsConnector);
+			// ServerConnector httpsConnector = new ServerConnector(server);
+			// httpsConnector.setPort(Integer.getInteger("jetty.port", 8443));
+			// httpsConnector.setDefaultProtocol("https");
+			// connectors.add(httpsConnector);
 		}
 
 		server.setConnectors(connectors.toArray(new Connector[0]));
 
 		// Describe our web app
 
-		WebAppContext webapp = new WebAppContext();
-		webapp.setContextPath("/xpro");
-		webapp.setWar("collapsed/xpro.war");
+		WebAppContext webAppContext = new WebAppContext();
+		webAppContext.setContextPath("/xpro");
+		webAppContext.setWar("collapsed/xpro.war");
+		// webAppContext.setClassLoader(Thread.currentThread().getContextClassLoader());
+		webAppContext.setParentLoaderPriority(true);
 
 		// Give the web app some JAAS security
 
@@ -73,11 +77,12 @@ public class RunJetty {
 		// Replace the web app's list of classes with one that excludes slf4j and jaas
 
 		// webapp.setServerClasses(new String[] { "org.mortbay.jetty." });
-		webapp.setServerClasses(new String[] { "-org.mortbay.jetty.plus.jaas.", "org.mortbay.jetty." });
+		// webapp.setServerClasses(new String[] { "-org.mortbay.jetty.plus.jaas.", "org.mortbay.jetty." });
+		// webAppContext.setServerClasses(new String[] { "-org.eclipse.jetty.plus.jaas.", "org.eclipse.jetty." });
 
 		// Tell our Jetty web server to handle our web app
 
-		server.setHandler(webapp);
+		server.setHandler(webAppContext);
 
 		// Start the server then wait until it stops.
 

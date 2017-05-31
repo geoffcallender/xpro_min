@@ -14,8 +14,6 @@ import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.text.DecimalFormat;
-import java.time.Period;
-import java.time.format.DateTimeParseException;
 import java.util.Properties;
 
 import org.slf4j.Logger;
@@ -304,19 +302,6 @@ public class PropertiesLoader {
 		}
 		catch (NumberFormatException e) {
 			throw new PropertyValueException(propertyName, this.resourceName, propertyValue, " a Double.");
-		}
-	}
-
-	public Period getMandatoryPeriodProperty(String propertyName) {
-		String propertyValue = getMandatoryProperty(propertyName);
-
-		try {
-			Period p = Period.parse(propertyValue);
-			return p;
-		}
-		catch (DateTimeParseException e) {
-			throw new PropertyValueException(propertyName, this.resourceName, propertyValue,
-					" a period. For valid formats see https://docs.oracle.com/javase/8/docs/api/java/time/Period.html#parse-java.lang.CharSequence- .");
 		}
 	}
 
