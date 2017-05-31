@@ -4,10 +4,9 @@ import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.eclipse.jetty.ajp.Ajp13SocketConnector;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.nio.SelectChannelConnector;
+import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.webapp.WebAppContext;
 import org.eclipse.jetty.xml.XmlConfiguration;
 
@@ -42,13 +41,14 @@ public class RunJetty {
 		List<Connector> connectors = new ArrayList<>();
 
 		if (isUseAjp()) {
-			Connector ajpConnector = new Ajp13SocketConnector();
-			ajpConnector.setPort(Integer.getInteger("jetty.port", 8009));
-			connectors.add(ajpConnector);
+			// Connector ajpConnector = new Ajp13SocketConnector();
+			// ajpConnector.setPort(Integer.getInteger("jetty.port", 8009));
+			// connectors.add(ajpConnector);
+			throw new UnsupportedOperationException("AJP is no longer recommended by Jetty.");
 		}
 		else {
-			Connector httpConnector = new SelectChannelConnector();
-			// ServerConnector httpConnector = new ServerConnector(server);
+			// Connector httpConnector = new SelectChannelConnector();
+			ServerConnector httpConnector = new ServerConnector(server);
 			httpConnector.setPort(Integer.getInteger("jetty.port", 28080));
 			connectors.add(httpConnector);
 
