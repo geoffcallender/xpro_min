@@ -40,7 +40,8 @@ log4j.logger.org.openejb=DEBUG
 log4j.logger.org.apache.openejb=DEBUG,C
 log4j.category.OpenEJB=DEBUG,C
 
-log4j.logger.org.mortbay.log=INFO
+#log4j.logger.org.mortbay.log=INFO
+log4j.logger.org.eclipse.jetty=INFO
 
 log4j.logger.org.slf4j=INFO
 

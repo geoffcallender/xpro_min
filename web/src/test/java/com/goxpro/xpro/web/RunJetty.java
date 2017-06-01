@@ -1,6 +1,5 @@
 package com.goxpro.xpro.web;
 
-import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,12 +12,14 @@ import org.eclipse.jetty.xml.XmlConfiguration;
 public class RunJetty {
 
 	public static void main(String[] args) throws Exception {
-		String jetty_home = System.getProperty("jetty.home");
+		// String jetty_home = System.getProperty("jetty.home");
 
 		// Create and configure a Jetty web server.
 
 		Server server = new Server();
-		XmlConfiguration configuration = new XmlConfiguration(new FileInputStream(jetty_home + "/etc/jetty.xml"));
+		// XmlConfiguration configuration = new XmlConfiguration(new FileInputStream(jetty_home + "/etc/jetty.xml"));
+		XmlConfiguration configuration = new XmlConfiguration(
+				Thread.currentThread().getContextClassLoader().getResourceAsStream("jetty.xml"));
 		configuration.configure(server);
 
 		// Normally we'd develop without AJP, ie. -Dgoxpro.jetty.use.ajp=false and -Dtapestry.secure-enabled=false .
@@ -49,7 +50,7 @@ public class RunJetty {
 		else {
 			// Connector httpConnector = new SelectChannelConnector();
 			ServerConnector httpConnector = new ServerConnector(server);
-			httpConnector.setPort(Integer.getInteger("jetty.port", 28080));
+			httpConnector.setPort(Integer.getInteger("jetty.port", 8080));
 			connectors.add(httpConnector);
 
 			// ServerConnector httpsConnector = new ServerConnector(server);

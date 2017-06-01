@@ -2,9 +2,9 @@
 <html xmlns:t="http://tapestry.apache.org/schema/tapestry_5_4.xsd">
 
 <body>
-	<t:eventlink event="invokeAFinderService">Invoke IPretendFinderServiceLocal</t:eventlink> (which doesn't use an interceptor)
+	<t:eventlink event="invokeAFinderService">Invoke IPretendFinderServiceLocal</t:eventlink> (which doesn't use an interceptor. Expect it to return the same page, with evidence in the log that it went into the session bean.)
 	<p/>
-	<t:eventlink event="invokeAManagerService">Invoke IPretendManagerServiceLocal</t:eventlink> (which DOES use an interceptor)
+	<t:eventlink event="invokeAManagerService">Invoke IPretendManagerServiceLocal</t:eventlink> (which DOES use an interceptor. Expect it to fail.)
 </body>
 
 </html>

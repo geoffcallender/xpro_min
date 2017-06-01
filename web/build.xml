@@ -287,13 +287,10 @@
 		<get dest="${lib.test.dir}/jetty-xml-9.4.5.v20170502.jar" usetimestamp="true" src="${maven.repo.root}/org/eclipse/jetty/jetty-xml/9.4.5.v20170502/jetty-xml-9.4.5.v20170502.jar" />
 		-->
 		<!-- Jetty for Java 7 -->
-		<!--
-		<get dest="${lib.test.dir}/jetty-server-9.2.21.v20170120.jar" usetimestamp="true" src="${maven.repo.root}/org/eclipse/jetty/jetty-server/9.2.21.v20170120/jetty-server-9.2.21.v20170120.jar" />
-		<get dest="${lib.test.dir}/jetty-servlet-9.2.21.v20170120.jar" usetimestamp="true" src="${maven.repo.root}/org/eclipse/jetty/jetty-servlet/9.2.21.v20170120/jetty-servlet-9.2.21.v20170120.jar" />
-		<get dest="${lib.test.dir}/jetty-util-9.2.21.v20170120.jar" usetimestamp="true" src="${maven.repo.root}/org/eclipse/jetty/jetty-util/9.2.21.v20170120/jetty-util-9.2.21.v20170120.jar" />
-		<get dest="${lib.test.dir}/jetty-webapp-9.2.21.v20170120.jar" usetimestamp="true" src="${maven.repo.root}/org/eclipse/jetty/jetty-webapp/9.2.21.v20170120/jetty-webapp-9.2.21.v20170120.jar" />
-		<get dest="${lib.test.dir}/jetty-xml-9.2.21.v20170120.jar" usetimestamp="true" src="${maven.repo.root}/org/eclipse/jetty/jetty-xml/9.2.21.v20170120/jetty-xml-9.2.21.v20170120.jar" />
-		-->
+		<get dest="${lib.test.dir}/jetty-http-9.2.21.v20170120.jar" usetimestamp="true" src="${maven.repo.root}/org/eclipse/jetty/jetty-http/9.2.21.v20170120/jetty-http-9.2.21.v20170120.jar" />
+		<get dest="${lib.test.dir}/jetty-io-9.2.21.v20170120.jar" usetimestamp="true" src="${maven.repo.root}/org/eclipse/jetty/jetty-io/9.2.21.v20170120/jetty-io-9.2.21.v20170120.jar" />
+		<get dest="${lib.test.dir}/jetty-jndi-9.2.21.v20170120.jar" usetimestamp="true" src="${maven.repo.root}/org/eclipse/jetty/jetty-jndi/9.2.21.v20170120/jetty-jndi-9.2.21.v20170120.jar" />
+		<get dest="${lib.test.dir}/jetty-security-9.2.21.v20170120.jar" usetimestamp="true" src="${maven.repo.root}/org/eclipse/jetty/jetty-security/9.2.21.v20170120/jetty-security-9.2.21.v20170120.jar" />
 		<get dest="${lib.test.dir}/jetty-server-9.2.21.v20170120.jar" usetimestamp="true" src="${maven.repo.root}/org/eclipse/jetty/jetty-server/9.2.21.v20170120/jetty-server-9.2.21.v20170120.jar" />
 		<get dest="${lib.test.dir}/jetty-servlet-9.2.21.v20170120.jar" usetimestamp="true" src="${maven.repo.root}/org/eclipse/jetty/jetty-servlet/9.2.21.v20170120/jetty-servlet-9.2.21.v20170120.jar" />
 		<get dest="${lib.test.dir}/jetty-util-9.2.21.v20170120.jar" usetimestamp="true" src="${maven.repo.root}/org/eclipse/jetty/jetty-util/9.2.21.v20170120/jetty-util-9.2.21.v20170120.jar" />
