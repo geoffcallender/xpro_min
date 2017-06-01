@@ -14,7 +14,7 @@ Get dependent files:
 	web/src/test/lib-*  
 
 Clean:
-- Run Ant file _build2.xml_ (NOTE THE "2" IN THE FILENAME) target _clean_.   
+- Run Ant file _build2.xml_ (NOTE THE "2" IN THE FILENAME) target _clean_.  
 - As a sanity check, confirm that _collapsed/_ is now empty.  
 
 Compile:
@@ -23,7 +23,11 @@ Compile:
 
 Run:
 - Open _runjetty.sh_ for edit. Examine _PROJECT_ and _OPENEJB_: they are directory paths, without trailing slashes. Modify them as necessary.
-- Run command _./runjetty.sh_. Wait until a message like this appears in the console log:  
+- On a command line, go to the project root. Check that _runjetty.sh_ is executable. Then run it:
+
+	./runjetty.sh
+
+- Wait until a message like this appears in the console log:  
 
 	INFO [main] (Server.java:379) - Started @7249ms
 
